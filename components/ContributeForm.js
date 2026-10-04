@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client.js";
 import { createEntry } from "../app/contribute/actions.js";
+import { updateEntry } from "../app/entries/actions.js";
 
 const GOLD = "#D4AF37";
 const GOLD_LIGHT = "#F5D061";
@@ -57,7 +58,9 @@ function detectImageType(bytes) {
 
 const INPUT_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
 
-function validate({ title, description, place, photo }) {
+// requirePhoto is true when creating (an image is mandatory) and false when
+// editing (only required if the user wants to change the photo).
+function validate({ title, description, place, photo, requirePhoto }) {
   const errors = {};
   const t = title.trim();
   const d = description.trim();
@@ -68,7 +71,7 @@ function validate({ title, description, place, photo }) {
     errors.description = "Description must be at least 10 characters.";
   }
   if (!p) errors.place = "Place is required.";
-  if (!photo) errors.photo = "A photo is required.";
+  if (requirePhoto && !photo) errors.photo = "A photo is required.";
   return errors;
 }
 
@@ -156,11 +159,14 @@ const styles = {
   },
 };
 
-export default function ContributeForm() {
+export default function ContributeForm({ entry }) {
+  // The same form is used to create (/contribute) and to edit an existing
+  // entry. When an entry object is passed, the form is pre-filled and edits it.
+  const isEdit = Boolean(entry);
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [place, setPlace] = useState("");
+  const [title, setTitle] = useState(entry?.title ?? "");
+  const [description, setDescription] = useState(entry?.description ?? "");
+  const [place, setPlace] = useState(entry?.place ?? "");
   const [photo, setPhoto] = useState(null);
   const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
@@ -178,7 +184,13 @@ export default function ContributeForm() {
     e.preventDefault();
     setError("");
 
-    const nextErrors = validate({ title, description, place, photo });
+    const nextErrors = validate({
+      title,
+      description,
+      place,
+      photo,
+      requirePhoto: !isEdit,
+    });
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -188,7 +200,7 @@ export default function ContributeForm() {
 
     const supabase = createClient();
 
-    // Re-confirm the session before uploading; owner is set server-side.
+    // Re-confirm the session before any write; owner is set server-side.
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setBusy(false);
@@ -196,48 +208,62 @@ export default function ContributeForm() {
       return;
     }
 
-    // Verify the real file bytes are an allowed image.
-    let detected;
-    try {
-      detected = detectImageType(new Uint8Array(await photo.arrayBuffer()));
-    } catch {
-      detected = null;
-    }
-    if (!detected) {
-      setBusy(false);
-      setErrors({
-        photo: "Only JPG, PNG, WebP, or GIF images are allowed.",
-      });
-      return;
-    }
-    if (photo.size > MAX_BYTES) {
-      setBusy(false);
-      setErrors({ photo: "The photo must be 5 MB or smaller." });
-      return;
+    // A photo is mandatory when creating, but optional when editing: if no new
+    // one is chosen, the old photo stays untouched on the row.
+    let photoUrl = null;
+    if (photo) {
+      // Verify the real file bytes are an allowed image.
+      let detected;
+      try {
+        detected = detectImageType(new Uint8Array(await photo.arrayBuffer()));
+      } catch {
+        detected = null;
+      }
+      if (!detected) {
+        setBusy(false);
+        setErrors({
+          photo: "Only JPG, PNG, WebP, or GIF images are allowed.",
+        });
+        return;
+      }
+      if (photo.size > MAX_BYTES) {
+        setBusy(false);
+        setErrors({ photo: "The photo must be 5 MB or smaller." });
+        return;
+      }
+
+      const storagePath = `${user.id}/${crypto.randomUUID()}.${EXT_BY_TYPE[detected]}`;
+      const { error: uploadError } = await supabase.storage
+        .from("photos")
+        .upload(storagePath, photo, { contentType: detected });
+
+      if (uploadError) {
+        console.error("Photo upload to storage failed:", uploadError);
+        setBusy(false);
+        setError("The photo could not be uploaded. Please try again.");
+        return;
+      }
+
+      const { data: pub } = supabase.storage
+        .from("photos")
+        .getPublicUrl(storagePath);
+      photoUrl = pub.publicUrl;
     }
 
-    const storagePath = `${user.id}/${crypto.randomUUID()}.${EXT_BY_TYPE[detected]}`;
-    const { error: uploadError } = await supabase.storage
-      .from("photos")
-      .upload(storagePath, photo, { contentType: detected });
-
-    if (uploadError) {
-      console.error("Photo upload to storage failed:", uploadError);
-      setBusy(false);
-      setError("The photo could not be uploaded. Please try again.");
-      return;
-    }
-
-    const { data: pub } = supabase.storage
-      .from("photos")
-      .getPublicUrl(storagePath);
-
-    const result = await createEntry({
-      title: title.trim(),
-      description: description.trim(),
-      place: place.trim(),
-      photoUrl: pub.publicUrl,
-    });
+    const result = isEdit
+      ? await updateEntry({
+          id: entry.id,
+          title: title.trim(),
+          description: description.trim(),
+          place: place.trim(),
+          photoUrl,
+        })
+      : await createEntry({
+          title: title.trim(),
+          description: description.trim(),
+          place: place.trim(),
+          photoUrl,
+        });
 
     if (result.error) {
       setBusy(false);
@@ -248,12 +274,14 @@ export default function ContributeForm() {
     router.push(`/entries/${result.id}`);
   }
 
-  return (
+return (
     <div style={styles.card}>
       <p style={styles.kicker}>
         KHMER LIVING ARCHIVE • បណ្ណសាររស់នៅខ្មែរ
       </p>
-      <h1 style={styles.title}>Contribute an entry</h1>
+      <h1 style={styles.title}>
+        {isEdit ? "Edit entry" : "Contribute an entry"}
+      </h1>
 
       <form onSubmit={handleSubmit} noValidate>
         <label style={styles.label} htmlFor="title">
@@ -336,7 +364,13 @@ export default function ContributeForm() {
         )}
 
         <button type="submit" disabled={busy} style={styles.button}>
-          {busy ? "Uploading and saving…" : "Save entry"}
+          {busy
+            ? isEdit
+              ? "Saving…"
+              : "Uploading and saving…"
+            : isEdit
+              ? "Save changes"
+              : "Save entry"}
         </button>
       </form>
 

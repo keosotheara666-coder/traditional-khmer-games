@@ -4,7 +4,8 @@ import { createClient } from "../../lib/supabase/server.js";
 
 // Server-side copy of the form rules (defence in depth — never trust the
 // browser). The client form shows the same messages before it even submits.
-const FIELD_RULES = {
+// Exported so the edit action reuses the exact same rules.
+export const FIELD_RULES = {
   title: (v) => (v.length === 0 ? "Title is required." : null),
   description: (v) =>
     v.length === 0
