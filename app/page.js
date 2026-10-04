@@ -1,7 +1,6 @@
 import collection from "../collection.config.js";
 import GameBrowser from "../components/GameBrowser.js";
 import AngkorBackdrop from "../components/AngkorBackdrop.js";
-import RomdoulFlower from "../components/RomdoulFlower.js";
 import games from "./traditional-games/games.js";
 
 const GOLD = "#D4AF37";
@@ -117,9 +116,7 @@ export default function Home() {
           KHMER LIVING ARCHIVE • បណ្ណសាររស់នៅខ្មែរ
         </p>
         <div style={styles.titleRow}>
-          <RomdoulFlower size={38} />
           <h1 style={styles.title}>Traditional Khmer Games</h1>
-          <RomdoulFlower size={38} color={GOLD} />
         </div>
         {/* Khmer translation first — it is the prioritised language */}
         <p style={styles.descKhmer}>{collection.descriptionKhmer}</p>

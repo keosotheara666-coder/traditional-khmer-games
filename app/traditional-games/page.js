@@ -2,7 +2,6 @@ import collection from "../../collection.config.js";
 import games from "./games.js";
 import GameCard from "../../components/GameCard.js";
 import AngkorBackdrop from "../../components/AngkorBackdrop.js";
-import RomdoulFlower from "../../components/RomdoulFlower.js";
 
 export const metadata = {
   title: `${collection.name} — Traditional Khmer Games`,
@@ -115,9 +114,7 @@ export default function TraditionalGamesPage() {
       <header style={styles.header}>
         <p style={styles.kicker}>KHMER LIVING ARCHIVE • បណ្ណសាររស់នៅខ្មែរ</p>
         <div style={styles.titleRow}>
-          <RomdoulFlower size={34} color={GOLD} />
           <h1 style={styles.title}>Traditional Khmer Games</h1>
-          <RomdoulFlower size={34} />
         </div>
         <h2 style={styles.subtitle}>ល្បែងប្រជាប្រិយខ្មែរ</h2>
 

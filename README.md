@@ -46,7 +46,6 @@ app/
 components/
   NavMenu.js                  ← top navigation bar (Home / Traditional Khmer Games)
   AngkorBackdrop.js           ← decorative backdrop behind the hero
-  RomdoulFlower.js            ← decorative romdoul-flower illustration
   GameBrowser.js              ← search box + pick-a-game flow (homepage)
   GameList.js                 ← clickable list of results
   GameCard.js                 ← full card, one game, Khmer first then English
