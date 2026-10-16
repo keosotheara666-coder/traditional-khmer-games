@@ -3,7 +3,7 @@
 import { createClient } from "../../lib/supabase/server.js";
 // Reuse the exact same validation rules as the contribute form, so editing
 // and creating an entry always agree on what is a valid entry.
-import { FIELD_RULES } from "../contribute/actions.js";
+import { FIELD_RULES } from "../../lib/validation.js";
 
 // Edit and delete both call .select() afterwards and treat "no row came back"
 // as a failed write. That happens, for example, when the row was already

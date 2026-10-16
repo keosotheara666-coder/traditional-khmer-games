@@ -1,20 +1,10 @@
 "use server";
 
 import { createClient } from "../../lib/supabase/server.js";
-
 // Server-side copy of the form rules (defence in depth — never trust the
-// browser). The client form shows the same messages before it even submits.
-// Exported so the edit action reuses the exact same rules.
-export const FIELD_RULES = {
-  title: (v) => (v.length === 0 ? "Title is required." : null),
-  description: (v) =>
-    v.length === 0
-      ? "Description is required."
-      : v.length < 10
-        ? "Description must be at least 10 characters."
-        : null,
-  place: (v) => (v.length === 0 ? "Place is required." : null),
-};
+// browser). Live in lib/validation.js — a "use server" file may only export
+// async functions, and this object wouldn't be allowed to stay here.
+import { FIELD_RULES } from "../../lib/validation.js";
 
 export async function createEntry({ title, description, place, photoUrl }) {
   // Owner always comes from the signed-in session, never from the form.

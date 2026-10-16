@@ -6,6 +6,23 @@ four-feature skeleton (browse & search, contributor accounts, own-your-entries,
 submit-review-publish) that grows across the semester. Same skeleton for
 everyone; the collection is what makes it yours.
 
+## Sources of the entries
+
+Every entry is recorded from a real, living source — the knowledge was passed on
+to the curator by family, grandparents, and neighbours, and nothing is from
+lorem ipsum or copied text. Where each entry's knowledge comes from:
+
+| Game | Source |
+| --- | --- |
+| Teanh Proat | My neighbours |
+| Chol Chhoung | My neighbours |
+| Bos Angkunh | My grandparents |
+| Leak Kanseng | My grandparents |
+| Chab Kon Kleng | My grandparents |
+| Dondorm Sloek Chher (Leaf Stealing) | My family |
+| Pongroat Kon Kromom | My family |
+| Veay Ka'am | My family |
+
 ## Tech stack
 
 - **Next.js 15** — App Router (`app/` directory), server-rendered pages.

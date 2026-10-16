@@ -86,9 +86,47 @@ const styles = {
   link: {
     color: GOLD_LIGHT,
   },
+  forgotLink: {
+    display: "block",
+    marginTop: 10,
+    textAlign: "right",
+    background: "none",
+    border: "none",
+    color: GOLD_LIGHT,
+    fontSize: 12,
+    textDecoration: "underline",
+    cursor: "pointer",
+  },
+  infoMessage: {
+    marginTop: 18,
+    padding: "10px 14px",
+    border: `1px solid ${GOLD}`,
+    borderRadius: 8,
+    color: CREAM,
+    fontSize: 14,
+    textAlign: "center",
+  },
 };
 
 const isLogin = (mode) => mode === "login";
+
+// Supabase Auth rate-limits sign-in / signup / reset attempts per IP and per
+// account. The 429 errors carry a "rate limit" style message. Rather than echo
+// the raw text (which reads like a server bug), show the user what to do and,
+// crucially, that retrying now will keep the limit active.
+const isRateLimit = (error) =>
+  error?.status === 429 || /rate\s*limit|too many requests/i.test(error?.message || "");
+const describeError = (error) =>
+  isRateLimit(error)
+    ? "Too many attempts from this device. Wait a bit before trying again — " +
+        "each retry renews the cool-down, so give it a few minutes."
+    : error.message;
+
+// Canonical base URL for the links Supabase emails us (recovery AND signup
+// confirmation). NEXT_PUBLIC_SITE_URL (set in Vercel) overrides so the emailed
+// links always point at the live site; otherwise fall back to wherever the
+// request started, so local development keeps working.
+const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
 export default function AuthForm({ mode }) {
   const router = useRouter();
@@ -96,6 +134,7 @@ export default function AuthForm({ mode }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -109,21 +148,73 @@ export default function AuthForm({ mode }) {
         password,
       });
       if (error) {
-        setError("Invalid email or password");
+        console.log("LOGIN ERROR:", error);
+        setError(describeError(error));
         setBusy(false);
         return;
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          // Point the confirmation email back at our site. Without this,
+          // Supabase uses its dashboard "Site URL", which is often left as
+          // localhost — new users never confirm and can't sign in.
+          emailRedirectTo: `${siteUrl()}/login`,
+        },
+      });
       if (error) {
-        setError("Could not create account. Please try again.");
+        console.log("SIGNUP ERROR:", error);
+        setError(describeError(error));
+        setBusy(false);
+        return;
+      }
+      // With email confirmation on (Supabase's default), signUp creates the user
+      // and emails a confirmation link but does not open a session. Catch that so
+      // we don't redirect the user into a signed-out state that looks like a
+      // failed signup.
+      if (!data.session) {
+        setError(
+          "Account created — check your email to confirm it, then sign in. " +
+            "You may need to check spam."
+        );
         setBusy(false);
         return;
       }
     }
 
-    router.replace("/");
+    // After a successful login, return to the page the user was heading to
+    // (e.g. /contribute links to /login?next=/contribute). Default back home.
+    // Read at submit time from the address bar rather than a Suspense-bound
+    // hook, so the /login and /signup pages can still pre-render statically.
+    const destination =
+      isLogin(mode)
+        ? new URLSearchParams(window.location.search).get("next") || "/"
+        : "/";
+
+    router.replace(destination);
     router.refresh();
+  }
+
+  // Forgot-password: ask Supabase to email a recovery link. Shown only on the
+  // login form. We always show the same confirmation regardless of whether the
+  // address is registered, so the page does not leak which emails exist.
+  async function handleForgotPassword() {
+    if (busy || resetSent) return;
+    setError("");
+    if (!email.trim()) {
+      setError("Enter your email address above to request a reset link.");
+      return;
+    }
+    const supabase = createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${siteUrl()}/reset-password`,
+    });
+    if (error) {
+      console.log("PASSWORD RESET REQUEST ERROR:", error);
+    }
+    setResetSent(true);
   }
 
   return (
@@ -167,9 +258,27 @@ export default function AuthForm({ mode }) {
           <button type="submit" disabled={busy} style={styles.button}>
             {isLogin(mode) ? "Sign in" : "Sign up"}
           </button>
+
+          {isLogin(mode) && (
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={busy || resetSent}
+              style={styles.forgotLink}
+            >
+              Forgot password?
+            </button>
+          )}
         </form>
 
         {error && <p role="alert" style={styles.error}>{error}</p>}
+
+        {resetSent && isLogin(mode) && (
+          <p role="status" style={styles.infoMessage}>
+            If an account exists for {email.trim()}, we've emailed a reset link.
+            Open it, choose a new password, then come back and sign in.
+          </p>
+        )}
 
         <p style={styles.footer}>
           {isLogin(mode) ? (

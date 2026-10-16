@@ -78,7 +78,7 @@ export default async function ContributePage() {
             Only signed-in contributors can add to the archive. Log in and every
             entry you submit will be saved as yours.
           </p>
-          <a href="/login" style={styles.loginLink}>
+          <a href="/login?next=/contribute" style={styles.loginLink}>
             Log in to contribute →
           </a>
         </div>

@@ -10,7 +10,7 @@ const games = [
     name: "Teanh Proat",
     khmerName: "ទាញព្រ័ត្រ",
     image: "/images/tug_of_war.jpg",
-    translit: "Teanh Proat",
+    translit: "Teanh Proat (Tug-of-war)",
     howToPlay:
       "Two equal teams grip opposite ends of a thick rope, each side standing behind a line drawn on the ground. At a signal both teams pull together as hard as they can. Whoever drags the other side over the middle line wins the round.",
     origin:

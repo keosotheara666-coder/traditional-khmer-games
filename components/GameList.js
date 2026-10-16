@@ -75,11 +75,13 @@ export default function GameList({ games, onSelect }) {
         <li key={game.name}>
           <button
             type="button"
-            style={
-              hovered === game.name
-                ? { ...styles.item, ...styles.itemHover }
-                : styles.item
-            }
+            style={{
+              ...styles.item,
+              borderColor: hovered === game.name
+                ? "#C9A227"
+                : "rgba(212,175,55,0.35)",
+              transform: hovered === game.name ? "translateY(-2px)" : "none",
+            }}
             onMouseEnter={() => setHovered(game.name)}
             onMouseLeave={() => setHovered(null)}
             onClick={() => onSelect(game)}

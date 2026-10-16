@@ -1,0 +1,59 @@
+
+> khmer-living-archive@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.23
+   - Local:        http://localhost:3001
+   - Network:      http://10.10.52.248:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.2s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 522ms (174 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 2s (724 modules)
+SUPABASE URL: https://nnfighclsglnojkrznao.supabase.co
+SUPABASE KEY EXISTS: true
+ GET / 200 in 3773ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 627ms (732 modules)
+SUPABASE URL: https://nnfighclsglnojkrznao.supabase.co
+SUPABASE KEY EXISTS: true
+ GET /login 200 in 1314ms
+ ✓ Compiled in 1572ms (732 modules)
+   Reload env: .env.local
+ ✓ Compiled in 896ms (906 modules)
+ GET /login 200 in 605ms
+   Reload env: .env.local
+ ✓ Compiled in 427ms (906 modules)
+ GET /login 200 in 577ms
+   Reload env: .env.local
+ ✓ Compiled in 9.2s (906 modules)
+SUPABASE URL: https://nnfighclsglnojkrznao.supabase.co
+SUPABASE KEY EXISTS: true
+ GET /login 200 in 5889ms
+   Reload env: .env.local
+ ✓ Compiled in 548ms (906 modules)
+ GET /login 200 in 248ms
+   Reload env: .env.local
+ ✓ Compiled in 423ms (906 modules)
+ GET /login 200 in 189ms
+ ✓ Compiled in 576ms (906 modules)
+ GET /login 200 in 220ms
+ ✓ Compiled /signup in 466ms (734 modules)
+SUPABASE URL: https://nnfighclsglnojkrznao.supabase.co
+SUPABASE KEY EXISTS: true
+ GET /signup 200 in 1001ms
+ ✓ Compiled in 1185ms (734 modules)
+ ✓ Compiled /_not-found in 450ms (739 modules)
+SUPABASE URL: https://nnfighclsglnojkrznao.supabase.co
+SUPABASE KEY EXISTS: true
+ GET /signup 404 in 862ms
+ GET /signup 200 in 112ms
+ ✓ Compiled in 1019ms (734 modules)
+ ✓ Compiled in 702ms (734 modules)
+ ✓ Compiled in 841ms (734 modules)
+ ✓ Compiled in 789ms (734 modules)
+ ✓ Compiled in 601ms (734 modules)
+ ✓ Compiled in 780ms (734 modules)
