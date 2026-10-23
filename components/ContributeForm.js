@@ -157,6 +157,36 @@ const styles = {
     fontSize: 14,
     textAlign: "center",
   },
+  thanksKhmer: {
+    fontSize: 18,
+    lineHeight: 1.7,
+    color: GOLD_LIGHT,
+    fontWeight: 600,
+    margin: "0 0 14px",
+    textAlign: "center",
+  },
+  thanksEn: {
+    fontSize: 15,
+    lineHeight: 1.6,
+    color: MUTED,
+    margin: 0,
+    textAlign: "center",
+  },
+  thanksLinks: {
+    marginTop: 24,
+    display: "flex",
+    gap: 16,
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  thanksLink: {
+    padding: "10px 18px",
+    borderRadius: 8,
+    border: `1px solid ${GOLD}`,
+    color: GOLD_LIGHT,
+    textDecoration: "none",
+    fontSize: 14,
+  },
 };
 
 export default function ContributeForm({ entry }) {
@@ -171,6 +201,7 @@ export default function ContributeForm({ entry }) {
   const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   function clearField(field) {
     if (errors[field]) {
@@ -271,8 +302,48 @@ export default function ContributeForm({ entry }) {
       return;
     }
 
-    router.push(`/entries/${result.id}`);
+    if (isEdit) {
+      // Editing still returns to the entry's own page.
+      router.push(`/entries/${result.id}`);
+      return;
+    }
+
+    // A brand-new contribution goes straight to the review queue — there is
+    // no public page for it yet. Thank the contributor instead of redirecting
+    // to the entry. The status is never sent by the form; the database
+    // default sets it to "pending".
+    setBusy(false);
+    setSubmitted(true);
   }
+
+  if (submitted) {
+    return (
+      <div style={styles.card}>
+        <p style={styles.kicker}>
+          KHMER LIVING ARCHIVE • បណ្ណសាររស់នៅខ្មែរ
+        </p>
+        <h1 style={styles.title}>Thank you</h1>
+        <p style={styles.thanksKhmer}>
+          សូមអរគុណសម្រាប់ការចូលរួម! ធាតុរបស់អ្នកត្រូវបានដាក់ស្នើរួចហើយ
+          ហើយកំពុងរង់ចាំការត្រួតពិនិត្យ។ វានឹងបង្ហាញនៅលើគេហទំព័រ
+          បន្ទាប់ពីត្រូវបានផ្សាយរួច។
+        </p>
+        <p style={styles.thanksEn}>
+          Thank you for contributing! Your entry has been submitted and is
+          pending review. It will appear on the site once it is published.
+        </p>
+        <div style={styles.thanksLinks}>
+          <a href="/my-entries" style={styles.thanksLink}>
+            View my entries
+          </a>
+          <a href="/" style={styles.thanksLink}>
+            Back to the archive
+          </a>
+        </div>
+      </div>
+    );
+  }
+
 
 return (
     <div style={styles.card}>

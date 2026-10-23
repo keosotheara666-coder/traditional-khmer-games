@@ -38,6 +38,14 @@ export async function updateEntry({ id, title, description, place, photoUrl }) {
     };
     if (photoUrl) patch.photo = photoUrl;
 
+    // An owner's edit sends the entry back to "pending" so it goes through
+    // review again — unless the caller is a reviewer, who edits without
+    // re-queuing. The form never sends a status; it is decided here,
+    // server-side. If the RPC call fails we treat the caller as a
+    // non-reviewer, which only means the entry returns to the queue.
+    const { data: isReviewer } = await supabase.rpc("is_reviewer");
+    if (isReviewer !== true) patch.status = "pending";
+
     // .eq("owner", user.id) scopes the update to the caller's own entry, so a
     // user can never edit someone else's row even if they know its id.
     const { data, error } = await supabase

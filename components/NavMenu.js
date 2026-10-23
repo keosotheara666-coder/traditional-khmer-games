@@ -93,6 +93,9 @@ export default function NavMenu({ userEmail }) {
         <div style={styles.auth}>
           {userEmail ? (
             <>
+              <a href="/my-entries" style={styles.link}>
+                My entries
+              </a>
               <span style={styles.userEmail}>{userEmail}</span>
               <button
                 type="button"
