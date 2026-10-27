@@ -9,7 +9,7 @@ import { FIELD_RULES } from "../../lib/validation.js";
 // as a failed write. That happens, for example, when the row was already
 // deleted or when the signed-in user is not its owner — PostgREST simply
 // matches zero rows and the update/delete never applies.
-export async function updateEntry({ id, title, description, place, photoUrl }) {
+export async function updateEntry({ id, title, meaning, description, place, region, photoUrl }) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -20,8 +20,10 @@ export async function updateEntry({ id, title, description, place, photoUrl }) {
     // Trim every text field before validating or writing.
     const trimmed = {
       title: String(title ?? "").trim(),
+      meaning: String(meaning ?? "").trim(),
       description: String(description ?? "").trim(),
       place: String(place ?? "").trim(),
+      region: String(region ?? "").trim(),
     };
 
     for (const [field, check] of Object.entries(FIELD_RULES)) {
@@ -33,10 +35,17 @@ export async function updateEntry({ id, title, description, place, photoUrl }) {
     // photo is left untouched on the row.
     const patch = {
       title: trimmed.title,
+      meaning: trimmed.meaning,
       description: trimmed.description,
       place: trimmed.place,
+      region: trimmed.region,
     };
-    if (photoUrl) patch.photo = photoUrl;
+    if (photoUrl) {
+      // Keep both columns in sync: photo is what the UI reads, photo_url is
+      // what the entries_photo_required CHECK insists is non-empty.
+      patch.photo = photoUrl;
+      patch.photo_url = photoUrl;
+    }
 
     // An owner's edit sends the entry back to "pending" so it goes through
     // review again — unless the caller is a reviewer, who edits without

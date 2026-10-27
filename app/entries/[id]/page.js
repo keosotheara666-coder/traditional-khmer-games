@@ -100,8 +100,14 @@ export default async function EntryPage({ params }) {
         <h1 style={styles.title}>{entry.title}</h1>
         <p style={styles.description}>{entry.description}</p>
 
+        <p style={styles.label}>Meaning</p>
+        <p style={styles.place}>{entry.meaning}</p>
+
         <p style={styles.label}>Place</p>
         <p style={styles.place}>{entry.place}</p>
+
+        <p style={styles.label}>Region</p>
+        <p style={styles.place}>{entry.region || "—"}</p>
       </article>
 
       {isOwner && <EntryActions entryId={entry.id} />}

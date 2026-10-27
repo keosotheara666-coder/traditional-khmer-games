@@ -60,12 +60,14 @@ const INPUT_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
 
 // requirePhoto is true when creating (an image is mandatory) and false when
 // editing (only required if the user wants to change the photo).
-function validate({ title, description, place, photo, requirePhoto }) {
+function validate({ title, meaning, description, place, photo, requirePhoto }) {
   const errors = {};
   const t = title.trim();
+  const m = meaning.trim();
   const d = description.trim();
   const p = place.trim();
   if (!t) errors.title = "Title is required.";
+  if (!m) errors.meaning = "Meaning is required.";
   if (!d) errors.description = "Description is required.";
   else if (d.length < 10) {
     errors.description = "Description must be at least 10 characters.";
@@ -195,8 +197,10 @@ export default function ContributeForm({ entry }) {
   const isEdit = Boolean(entry);
   const router = useRouter();
   const [title, setTitle] = useState(entry?.title ?? "");
+  const [meaning, setMeaning] = useState(entry?.meaning ?? "");
   const [description, setDescription] = useState(entry?.description ?? "");
   const [place, setPlace] = useState(entry?.place ?? "");
+  const [region, setRegion] = useState(entry?.region ?? "");
   const [photo, setPhoto] = useState(null);
   const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
@@ -217,6 +221,7 @@ export default function ContributeForm({ entry }) {
 
     const nextErrors = validate({
       title,
+      meaning,
       description,
       place,
       photo,
@@ -285,14 +290,18 @@ export default function ContributeForm({ entry }) {
       ? await updateEntry({
           id: entry.id,
           title: title.trim(),
+          meaning: meaning.trim(),
           description: description.trim(),
           place: place.trim(),
+          region: region.trim(),
           photoUrl,
         })
       : await createEntry({
           title: title.trim(),
+          meaning: meaning.trim(),
           description: description.trim(),
           place: place.trim(),
+          region: region.trim(),
           photoUrl,
         });
 
@@ -375,6 +384,25 @@ return (
           </p>
         )}
 
+        <label style={styles.label} htmlFor="meaning">
+          Meaning
+        </label>
+        <textarea
+          id="meaning"
+          value={meaning}
+          onChange={(e) => {
+            setMeaning(e.target.value);
+            clearField("meaning");
+          }}
+          aria-invalid={errors.meaning ? "true" : undefined}
+          style={styles.textarea}
+        />
+        {errors.meaning && (
+          <p style={styles.fieldError} role="alert">
+            {errors.meaning}
+          </p>
+        )}
+
         <label style={styles.label} htmlFor="description">
           Description
         </label>
@@ -413,6 +441,20 @@ return (
             {errors.place}
           </p>
         )}
+
+        <label style={styles.label} htmlFor="region">
+          Region (optional)
+        </label>
+        <input
+          id="region"
+          type="text"
+          value={region}
+          onChange={(e) => {
+            setRegion(e.target.value);
+            clearField("region");
+          }}
+          style={styles.input}
+        />
 
         <label style={styles.label} htmlFor="photo">
           Photo
