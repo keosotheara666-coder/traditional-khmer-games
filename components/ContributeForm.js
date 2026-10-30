@@ -71,6 +71,8 @@ function validate({ title, meaning, description, place, photo, requirePhoto }) {
   if (!d) errors.description = "Description is required.";
   else if (d.length < 10) {
     errors.description = "Description must be at least 10 characters.";
+  } else if (d.length > 300) {
+    errors.description = "Description must be 300 characters or fewer.";
   }
   if (!p) errors.place = "Place is required.";
   if (requirePhoto && !photo) errors.photo = "A photo is required.";
@@ -114,6 +116,19 @@ const styles = {
     background: "#17120A",
     color: CREAM,
     fontSize: 15,
+  },
+  rowTextarea: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "12px 14px",
+    borderRadius: 8,
+    border: `1px solid ${GOLD}`,
+    background: "#17120A",
+    color: CREAM,
+    fontSize: 15,
+    // Same look and height as the single-line title/place inputs; resize is
+    // disabled so the meaning box always stays the same one-line size.
+    resize: "none",
   },
   textarea: {
     width: "100%",
@@ -389,13 +404,14 @@ return (
         </label>
         <textarea
           id="meaning"
+          rows={1}
           value={meaning}
           onChange={(e) => {
             setMeaning(e.target.value);
             clearField("meaning");
           }}
           aria-invalid={errors.meaning ? "true" : undefined}
-          style={styles.textarea}
+          style={styles.rowTextarea}
         />
         {errors.meaning && (
           <p style={styles.fieldError} role="alert">
@@ -408,6 +424,7 @@ return (
         </label>
         <textarea
           id="description"
+          maxLength={300}
           value={description}
           onChange={(e) => {
             setDescription(e.target.value);

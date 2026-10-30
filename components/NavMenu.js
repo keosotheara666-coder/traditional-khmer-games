@@ -60,7 +60,7 @@ const styles = {
   },
 };
 
-export default function NavMenu({ userEmail }) {
+export default function NavMenu({ userEmail, isReviewer }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -96,6 +96,11 @@ export default function NavMenu({ userEmail }) {
               <a href="/my-entries" style={styles.link}>
                 My entries
               </a>
+              {isReviewer && (
+                <a href="/review" style={styles.link}>
+                  Review
+                </a>
+              )}
               <span style={styles.userEmail}>{userEmail}</span>
               <button
                 type="button"

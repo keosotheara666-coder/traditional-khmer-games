@@ -9,12 +9,17 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   let userEmail = null;
+  let isReviewer = false;
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     userEmail = user?.email ?? null;
+    // The /review link is shown only to users whom is_reviewer() accepts.
+    // A failed RPC call means "not a reviewer".
+    const { data } = await supabase.rpc("is_reviewer");
+    isReviewer = data === true;
   } catch {
     // Supabase credentials not configured yet — treat everyone as logged out.
   }
@@ -31,7 +36,7 @@ export default async function RootLayout({ children }) {
           minHeight: "100vh",
         }}
       >
-        <NavMenu userEmail={userEmail} />
+        <NavMenu userEmail={userEmail} isReviewer={isReviewer} />
         {children}
       </body>
     </html>
