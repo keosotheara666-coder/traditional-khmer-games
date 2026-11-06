@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client.js";
 import { createEntry } from "../app/contribute/actions.js";
-import { updateEntry } from "../app/entries/actions.js";
+import { updateEntry, deleteEntry } from "../app/entries/actions.js";
 
 const GOLD = "#D4AF37";
 const GOLD_LIGHT = "#F5D061";
 const BRASS = "#B8860B";
 const CREAM = "#F2E9D8";
 const MUTED = "#C9B98F";
+const RED = "#E5484D";
 
 // OWASP file-upload guidance: only images, a size cap, a randomised filename,
 // and a type decided from the file's real bytes (magic numbers), never from the
@@ -60,12 +61,13 @@ const INPUT_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
 
 // requirePhoto is true when creating (an image is mandatory) and false when
 // editing (only required if the user wants to change the photo).
-function validate({ title, meaning, description, place, photo, requirePhoto }) {
+function validate({ title, meaning, description, place, region, photo, requirePhoto }) {
   const errors = {};
   const t = title.trim();
   const m = meaning.trim();
   const d = description.trim();
   const p = place.trim();
+  const r = region.trim();
   if (!t) errors.title = "Title is required.";
   if (!m) errors.meaning = "Meaning is required.";
   if (!d) errors.description = "Description is required.";
@@ -75,6 +77,7 @@ function validate({ title, meaning, description, place, photo, requirePhoto }) {
     errors.description = "Description must be 300 characters or fewer.";
   }
   if (!p) errors.place = "Place is required.";
+  if (!r) errors.region = "Region is required.";
   if (requirePhoto && !photo) errors.photo = "A photo is required.";
   return errors;
 }
@@ -106,6 +109,10 @@ const styles = {
     fontSize: 13,
     color: MUTED,
     margin: "16px 0 6px",
+  },
+  required: {
+    color: RED,
+    marginLeft: 4,
   },
   input: {
     width: "100%",
@@ -153,9 +160,15 @@ const styles = {
     color: "#E0805A",
     fontSize: 13,
   },
-  button: {
-    width: "100%",
+  buttonRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
     marginTop: 24,
+    flexWrap: "wrap",
+  },
+  button: {
+    flex: "1 1 auto",
     padding: 13,
     borderRadius: 8,
     border: "none",
@@ -163,6 +176,53 @@ const styles = {
     color: "#17120A",
     fontSize: 16,
     fontWeight: 700,
+    cursor: "pointer",
+  },
+  delete: {
+    padding: "13px 20px",
+    borderRadius: 8,
+    border: "1px solid #E0805A",
+    background: "transparent",
+    color: "#E0805A",
+    fontSize: 16,
+    fontWeight: 700,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  deleteConfirm: {
+    width: "100%",
+    padding: "14px 18px",
+    borderRadius: 8,
+    border: `1px solid ${GOLD}`,
+    backgroundColor: "#17120A",
+  },
+  deleteConfirmText: {
+    margin: "0 0 12px",
+    color: MUTED,
+    fontSize: 14,
+  },
+  deleteConfirmActions: {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  confirmDelete: {
+    padding: "9px 16px",
+    borderRadius: 8,
+    border: "none",
+    background: "#E0805A",
+    color: "#17120A",
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  cancelDelete: {
+    padding: "9px 16px",
+    borderRadius: 8,
+    border: `1px solid ${GOLD}`,
+    background: "transparent",
+    color: GOLD_LIGHT,
+    fontSize: 14,
     cursor: "pointer",
   },
   banner: {
@@ -221,6 +281,10 @@ export default function ContributeForm({ entry }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  // Delete only makes sense while editing an existing entry. Confirming is
+  // required because removing an entry cannot be undone.
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function clearField(field) {
     if (errors[field]) {
@@ -239,6 +303,7 @@ export default function ContributeForm({ entry }) {
       meaning,
       description,
       place,
+      region,
       photo,
       requirePhoto: !isEdit,
     });
@@ -340,6 +405,22 @@ export default function ContributeForm({ entry }) {
     setSubmitted(true);
   }
 
+  async function handleDelete() {
+    if (deleting) return;
+    setDeleting(true);
+    setError("");
+    const result = await deleteEntry(entry.id);
+    if (result.error) {
+      setDeleting(false);
+      setError(result.error);
+      return;
+    }
+    // The entry is gone, so there is nowhere to save to — head back to the
+    // contributor's own list.
+    router.push("/my-entries");
+    router.refresh();
+  }
+
   if (submitted) {
     return (
       <div style={styles.card}>
@@ -380,7 +461,7 @@ return (
 
       <form onSubmit={handleSubmit} noValidate>
         <label style={styles.label} htmlFor="title">
-          Title
+          Title <span style={styles.required}>*</span>
         </label>
         <input
           id="title"
@@ -400,7 +481,7 @@ return (
         )}
 
         <label style={styles.label} htmlFor="meaning">
-          Meaning
+          Meaning <span style={styles.required}>*</span>
         </label>
         <textarea
           id="meaning"
@@ -420,7 +501,7 @@ return (
         )}
 
         <label style={styles.label} htmlFor="description">
-          Description
+          Description <span style={styles.required}>*</span>
         </label>
         <textarea
           id="description"
@@ -440,7 +521,7 @@ return (
         )}
 
         <label style={styles.label} htmlFor="place">
-          Place
+          Place <span style={styles.required}>*</span>
         </label>
         <input
           id="place"
@@ -460,7 +541,7 @@ return (
         )}
 
         <label style={styles.label} htmlFor="region">
-          Region (optional)
+          Region <span style={styles.required}>*</span>
         </label>
         <input
           id="region"
@@ -470,11 +551,17 @@ return (
             setRegion(e.target.value);
             clearField("region");
           }}
+          aria-invalid={errors.region ? "true" : undefined}
           style={styles.input}
         />
+        {errors.region && (
+          <p style={styles.fieldError} role="alert">
+            {errors.region}
+          </p>
+        )}
 
         <label style={styles.label} htmlFor="photo">
-          Photo
+          Photo {isEdit ? null : <span style={styles.required}>*</span>}
         </label>
         <input
           id="photo"
@@ -493,15 +580,52 @@ return (
           </p>
         )}
 
-        <button type="submit" disabled={busy} style={styles.button}>
-          {busy
-            ? isEdit
-              ? "Saving…"
-              : "Uploading and saving…"
-            : isEdit
-              ? "Save changes"
-              : "Save entry"}
-        </button>
+        <div style={styles.buttonRow}>
+          <button type="submit" disabled={busy || deleting} style={styles.button}>
+            {busy
+              ? isEdit
+                ? "Saving…"
+                : "Uploading and saving…"
+              : "Save " + (isEdit ? "changes" : "entry")}
+          </button>
+
+          {isEdit && !deleteConfirming && (
+            <button
+              type="button"
+              onClick={() => setDeleteConfirming(true)}
+              disabled={busy}
+              style={styles.delete}
+            >
+              Delete
+            </button>
+          )}
+
+          {isEdit && deleteConfirming && (
+            <div style={styles.deleteConfirm} role="alert">
+              <p style={styles.deleteConfirmText}>
+                Delete this entry? This cannot be undone.
+              </p>
+              <div style={styles.deleteConfirmActions}>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={styles.confirmDelete}
+                >
+                  {deleting ? "Deleting…" : "Yes, delete"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirming(false)}
+                  disabled={deleting}
+                  style={styles.cancelDelete}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </form>
 
       {error && (
