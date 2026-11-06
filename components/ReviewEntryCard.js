@@ -13,11 +13,14 @@ const RETURN_LABEL = "Return";
 
 // [Your answer to Q3] — shown when review_entry returns false or errors. The
 // RPC only answers true/false, so the message names the likely causes and the
-// fix instead of pretending we have a database error to repeat.
+// fix instead of pretending we have a database error to repeat. The buttons are
+// locked after a failure (status becomes "error"), so the message tells the
+// user they can no longer keep clicking — refresh to re-enable the decision.
 const FAILURE_MESSAGE =
-  "That review didn't go through — this entry may already have been reviewed " +
-  "or your session may have expired. Refresh the page to see the entry's " +
-  "current status; if it is still pending, try the review again.";
+  "That review didn't go through, so Publish and Return are now locked — this " +
+  "entry may already have been reviewed, or your session may have expired. " +
+  "You can't keep clicking; refresh the page to see the entry's current " +
+  "status. If it is still pending, the buttons unlock and you can try again.";
 
 const styles = {
   item: {
@@ -97,7 +100,11 @@ const styles = {
 // FAILURE_MESSAGE.
 export default function ReviewEntryCard({ entry }) {
   // idle → working (a decision is in flight) → done (removed from the queue)
+  // or → error (a decision failed; buttons lock until the page is refreshed)
   const [status, setStatus] = useState("idle");
+  // While working or after a failure the buttons are locked so the user cannot
+  // keep clicking after an error.
+  const locked = status !== "idle";
   const [workingDecision, setWorkingDecision] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -116,7 +123,11 @@ export default function ReviewEntryCard({ entry }) {
       if (error) {
         console.error("review_entry returned an error", error);
         setErrorMessage(FAILURE_MESSAGE);
-        setStatus("idle");
+        // Stay locked on error — the user must not be able to keep clicking
+        // the same decision and re-trigger the failure. Only a refresh (which
+        // re-renders the card after checking the entry's real status) unlocks
+        // the buttons again.
+        setStatus("error");
         return;
       }
       if (data !== true) {
@@ -125,14 +136,14 @@ export default function ReviewEntryCard({ entry }) {
           decision,
         });
         setErrorMessage(FAILURE_MESSAGE);
-        setStatus("idle");
+        setStatus("error");
         return;
       }
       setStatus("done");
     } catch (err) {
       console.error("review_entry threw", err);
       setErrorMessage(FAILURE_MESSAGE);
-      setStatus("idle");
+      setStatus("error");
     }
   }
 
@@ -166,7 +177,7 @@ export default function ReviewEntryCard({ entry }) {
         <button
           type="button"
           onClick={() => decide("published")}
-          disabled={status === "working"}
+          disabled={locked}
           style={styles.publish}
         >
           {status === "working" && workingDecision === "published"
@@ -176,7 +187,7 @@ export default function ReviewEntryCard({ entry }) {
         <button
           type="button"
           onClick={() => decide("returned")}
-          disabled={status === "working"}
+          disabled={locked}
           style={styles.returned}
         >
           {status === "working" && workingDecision === "returned"
